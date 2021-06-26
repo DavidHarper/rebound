@@ -81,35 +81,12 @@ int main(int argc, char* argv[]){
     int var_i_dy = reb_add_var_1st_order(r, kSpacecraft);
     r->particles[var_i_dy].vy = 1.;
 
-    reb_integrate(r, tmax);
-}
+    //reb_integrate(r, tmax);
 
-static double getDistance(struct reb_simulation* const r, const int kPlanet) {
-  double xp = r->particles[kPlanet].x, yp = r->particles[kPlanet].y;
-  double xs = r->particles[5].x, ys = r->particles[5].y;
-
-  double dx = xs - xp, dy = ys - yp;
-
-  return sqrt(dx*dx + dy*dy);
-}
-
-static double getLongitude(struct reb_simulation* const r, const int kPlanet) {
-  double xp = r->particles[kPlanet].x, yp = r->particles[kPlanet].y;
-  double xs = r->particles[5].x, ys = r->particles[5].y;
-
-  double lp = atan2(yp, xp);
-  double ls = atan2(ys, xs);
-
-  ls -= lp;
-  ls *= 180.0/M_PI;
-
-  if (ls < -180.0)
-    ls += 360.0;
-
-  if (ls > 180.0)
-    ls -= 360.0;
-
-  return ls;
+    while (r->t < tmax) {
+      reb_step(r);
+      heartbeat(r);
+    }
 }
 
 void heartbeat(struct reb_simulation* const r) {
