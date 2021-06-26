@@ -13,13 +13,15 @@
 void heartbeat(struct reb_simulation* const r);
 
 int main(int argc, char* argv[]){
-    if (argc < 2) {
-        fprintf(stderr, "Usage: %s tEnd D[target]\n", argv[0]);
+    if (argc < 4) {
+        fprintf(stderr, "Usage: %s tEnd D[target] dvx dvy\n", argv[0]);
         return 1;
     }
 
     double tmax = atof(argv[1]);
     double dTarget = atof(argv[2]);
+    double dvx = atof(argv[3]);
+    double dvy = atof(argv[4]);
 
     struct reb_simulation* r = reb_create_simulation();
 
@@ -78,6 +80,9 @@ int main(int argc, char* argv[]){
 
     int kSpacecraft = r->N - 1;
 
+    r->particles[kSpacecraft].vx += dvx;
+    r->particles[kSpacecraft].vy += dvy;
+
     int var_i_dx = reb_add_var_1st_order(r, kSpacecraft);
     r->particles[var_i_dx].vx = 1.;
 
@@ -130,6 +135,23 @@ int main(int argc, char* argv[]){
     dd = sqrt(x*x + y*y);
 
     printf("New D = %15.8f\n", dd);
+
+    double dx_dvx = r->particles[6].x, dy_dvx = r->particles[6].y,
+      dx_dvy = r->particles[7].x, dy_dvy = r->particles[7].y;
+
+    det = dx_dvx * dy_dvy - dy_dvx * dx_dvy;
+
+    double ddvx = (dx * dy_dvy - dy * dx_dvy) / det;
+    double ddvy = (dy * dx_dvx - dx * dy_dvx) / det;
+
+    printf("ddvx = %15.8f\nddvy = %15.8f\n", ddvx, ddvy);
+
+    dvx += ddvx;
+    dvy += ddvy;
+
+    printf("dvx = %15.8f\ndvy = %15.8f\n", dvx, dvy);
+
+    printf("\nNEXT RUN:\n\n%s %s %s %15.8f %15.8f\n", argv[0], argv[1], argv[2], dvx, dvy);
 }
 
 void heartbeat(struct reb_simulation* const r) {
