@@ -13,15 +13,16 @@
 void heartbeat(struct reb_simulation* const r);
 
 int main(int argc, char* argv[]){
-    if (argc < 4) {
-        fprintf(stderr, "Usage: %s tEnd D[target] dvx dvy\n", argv[0]);
+    if (argc < 5) {
+        fprintf(stderr, "Usage: %s tEnd L[Jupiter] D[target] dvx dvy\n", argv[0]);
         return 1;
     }
 
     double tmax = atof(argv[1]);
-    double dTarget = atof(argv[2]);
-    double dvx = atof(argv[3]);
-    double dvy = atof(argv[4]);
+    double lJupiter = atof(argv[2]);
+    double dTarget = atof(argv[3]);
+    double dvx = atof(argv[4]);
+    double dvy = atof(argv[5]);
 
     struct reb_simulation* r = reb_create_simulation();
 
@@ -54,7 +55,7 @@ int main(int argc, char* argv[]){
 
     double sma[4] = {  5.2, 9.6, 19.2, 30.1 };
 
-    double f0[4] = { 97.0, -149.0 -71.3 -43.9 };
+    double f0[4] = { lJupiter, -149.0 -71.3 -43.9 };
 
     double e = 0.0;
     double inc = 0.0;
@@ -92,6 +93,8 @@ int main(int argc, char* argv[]){
     //reb_integrate(r, tmax);
 
     double vdot = 0.0, rr = 0.0;
+    int flag = 0;
+    double saved_dvx, saved_dvy;
 
     while (r->t < tmax && vdot <= 0.0) {
       reb_step(r);
@@ -108,10 +111,24 @@ int main(int argc, char* argv[]){
       printf("%14.6f %14.6f", r->t, r->dt);
       printf("  %15.8f %15.8f", rr, vdot);
 
-      printf("  %15.4f %15.4f", r->particles[6].x, r->particles[6].y);
-      printf("  %15.4f %15.4f", r->particles[7].x, r->particles[7].y);
+      double xj = r->particles[1].x - r->particles[0].x;
+      double yj = r->particles[1].y - r->particles[0].y;
+
+      double rj = sqrt(xj * xj + yj * yj);
+
+      xj /= rj;
+      yj /= rj;
+
+      double yr = xj * dx + yj * dy;
+      double xr = yj * dx - xj * dy;
+
+      printf("  %15.8f %15.8f", xr, yr);
+
+      printf("  %12.1f %12.1f", r->particles[6].x, r->particles[6].y);
+      printf("  %12.1f %12.1f", r->particles[7].x, r->particles[7].y);
 
       printf("\n");
+
     }
 
     double x = r->particles[5].x - r->particles[1].x,
@@ -127,14 +144,14 @@ int main(int argc, char* argv[]){
     double dx = rr * dd * vy / det;
     double dy = -rr * dd * vx / det;
 
-    printf("dx = %15.8f\ndy = %15.8f\n", dx, dy);
+    printf("# dx = %15.8f\n# dy = %15.8f\n", dx, dy);
 
     x += dx;
     y += dy;
 
     dd = sqrt(x*x + y*y);
 
-    printf("New D = %15.8f\n", dd);
+    printf("# New D = %15.8f\n", dd);
 
     double dx_dvx = r->particles[6].x, dy_dvx = r->particles[6].y,
       dx_dvy = r->particles[7].x, dy_dvy = r->particles[7].y;
@@ -144,14 +161,19 @@ int main(int argc, char* argv[]){
     double ddvx = (dx * dy_dvy - dy * dx_dvy) / det;
     double ddvy = (dy * dx_dvx - dx * dy_dvx) / det;
 
-    printf("ddvx = %15.8f\nddvy = %15.8f\n", ddvx, ddvy);
+    printf("# ddvx = %15.8f\n# ddvy = %15.8f\n", ddvx, ddvy);
 
     dvx += ddvx;
     dvy += ddvy;
 
-    printf("dvx = %15.8f\ndvy = %15.8f\n", dvx, dvy);
+    saved_dvx = dvx;
+    saved_dvy = dvy;
 
-    printf("\nNEXT RUN:\n\n%s %s %s %15.8f %15.8f\n", argv[0], argv[1], argv[2], dvx, dvy);
+    printf("# dvx = %15.8f\n# dvy = %15.8f\n", dvx, dvy);
+
+    flag = 1;
+
+    printf("# NEXT RUN:\n#\n%s %s %s %s %15.8f %15.8f\n", argv[0], argv[1], argv[2], argv[3], saved_dvx, saved_dvy);
 }
 
 void heartbeat(struct reb_simulation* const r) {
