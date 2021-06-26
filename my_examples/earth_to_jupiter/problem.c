@@ -13,12 +13,13 @@
 void heartbeat(struct reb_simulation* const r);
 
 int main(int argc, char* argv[]){
-    if (argc < 5) {
-        fprintf(stderr, "Usage: %s tEnd L[Jupiter] L[Saturn] L[Uranus] L[Neptune]\n", argv[0]);
+    if (argc < 2) {
+        fprintf(stderr, "Usage: %s tEnd D[target]\n", argv[0]);
         return 1;
     }
 
     double tmax = atof(argv[1]);
+    double dTarget = atof(argv[2]);
 
     struct reb_simulation* r = reb_create_simulation();
 
@@ -51,13 +52,15 @@ int main(int argc, char* argv[]){
 
     double sma[4] = {  5.2, 9.6, 19.2, 30.1 };
 
+    double f0[4] = { 97.0, -149.0 -71.3 -43.9 };
+
     double e = 0.0;
     double inc = 0.0;
     double Omega = 0.0;
     double omega = 0.0;
 
     for (int i = 0; i < 4; i++) {
-      double f = atof(argv[i+2]) * M_PI/180.0;
+      double f = f0[i] * M_PI/180.0;
 
       struct reb_particle pPlanet = reb_tools_orbit_to_particle(r->G, primary, masses[i], sma[i], e, inc, Omega, omega, f);
 
@@ -83,10 +86,50 @@ int main(int argc, char* argv[]){
 
     //reb_integrate(r, tmax);
 
-    while (r->t < tmax) {
+    double vdot = 0.0, rr = 0.0;
+
+    while (r->t < tmax && vdot <= 0.0) {
       reb_step(r);
-      heartbeat(r);
+
+      double dx = r->particles[5].x - r->particles[1].x;
+      double dy = r->particles[5].y - r->particles[1].y;
+
+      double dvx = r->particles[5].vx - r->particles[1].vx;
+      double dvy = r->particles[5].vy - r->particles[1].vy;
+
+      rr = sqrt(dx*dx+dy*dy);
+      vdot = (dx*dvx + dy*dvy)/rr;
+
+      printf("%14.6f %14.6f", r->t, r->dt);
+      printf("  %15.8f %15.8f", rr, vdot);
+
+      printf("  %15.4f %15.4f", r->particles[6].x, r->particles[6].y);
+      printf("  %15.4f %15.4f", r->particles[7].x, r->particles[7].y);
+
+      printf("\n");
     }
+
+    double x = r->particles[5].x - r->particles[1].x,
+      y = r->particles[5].y - r->particles[1].y;
+
+    double vx = r->particles[5].vx - r->particles[1].vx,
+      vy = r->particles[5].vy - r->particles[1].vy;
+
+    double det = x * vy - y * vx;
+
+    double dd = dTarget - rr;
+
+    double dx = rr * dd * vy / det;
+    double dy = -rr * dd * vx / det;
+
+    printf("dx = %15.8f\ndy = %15.8f\n", dx, dy);
+
+    x += dx;
+    y += dy;
+
+    dd = sqrt(x*x + y*y);
+
+    printf("New D = %15.8f\n", dd);
 }
 
 void heartbeat(struct reb_simulation* const r) {
