@@ -95,6 +95,8 @@ void runSimulation(double tmax, double lJupiter0) {
 
     printf("%8.3f", lJupiter0);
 
+    double aj = 71492.0/149597870.700;
+
     if (trr > 0.0) {
       double dx = r->particles[kSpacecraft].x - r->particles[kJupiter].x;
       double dy = r->particles[kSpacecraft].y - r->particles[kJupiter].y;
@@ -116,8 +118,8 @@ void runSimulation(double tmax, double lJupiter0) {
       double yvr = xj * dvx + yj * dvy;
       double xvr = yj * dvx - xj * dvy;
 
-      printf(" %14.6f %15.8f %15.8f %15.8f %15.8f %15.8f %15.8f\n", trr, rr, vdot,
-        xr, yr, xvr, yvr);
+      printf(" %14.6f %15.8f %15.3f %15.8f %15.8f %15.8f %15.8f %15.8f\n", trr, rr, rr/aj,
+        vdot, xr, yr, xvr, yvr);
     } else
       printf(" NO CLOSEST APPROACH\n");
 }
